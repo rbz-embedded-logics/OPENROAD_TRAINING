@@ -175,3 +175,135 @@ Para salir de la consola de OpenROAD se debe ejecutar el comando 'exit'. Siempre
 user@user:/OpenROAD-flow-scripts$ source env.sh 
 OPENROAD: /OpenROAD-flow-scripts/tools/OpenROAD
 ```
+
+Recomendamos grabar el contenido del comando de ejecución del docker en un script llamado 'docker_gui.sh' para poder ejecutarlo de manera más sencilla.
+
+``` text
+user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ echo docker run --rm -it \
+           -u $(id -u ${USER}):$(id -g ${USER}) \
+           -v $(pwd)/flow:/OpenROAD-flow-scripts/flow \
+                   -v /etc/passwd:/etc/passwd:ro \
+                   -v /etc/group:/etc/group:ro \
+           -e DISPLAY=${DISPLAY} \
+           -v /tmp/.X11-unix:/tmp/.X11-unix \
+           -v ${HOME}/.Xauthority:/.Xauthority \
+           --network host \
+           --security-opt seccomp=unconfined \
+           openroad/flow-ubuntu22.04-builder:8287a5 > docker_gui.sh
+```
+
+A partir de aquí se va a seguir el siguiente flujo de trabajo:
+- Se usará un terminal en el host para editar ficheros, bien usando editores en línea de comandos (vim) o bien usando IDEs gráficos (se indicará con el texto 'host:' al principio de los comandos o con un comentario)
+- se usará el terminal en docker para ejecutar los comandos de openROAD (se indicará con el texto 'docker:' al principio de los comandos o con un comentario)
+
+## Descripción de los ficheros del flujo de trabajo
+
+Dentro de la carpeta de ficheros del OpenROAD-flow-scripts tendremos la carpeta 'flow', debemos entrar en ella para inspeccionar los contenidos.
+
+``` text
+# Antes de haber ejecutado un flujo de trabajo
+host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ cd flow
+host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow$ ls
+      BUILD.bazel  designs  Makefile   platforms  scripts  test  tutorials  util
+
+# Después de haber ejecutado un flujo de trabajo
+host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ cd flow
+host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow$ ls
+      BUILD.bazel  designs  logs  Makefile  objects  platforms  reports  results  scripts  test  tutorials  util
+```
+
+Cada una de esas carpetas posee un conjunto de información distinto e importante para los proyectos:
+
+``` text
+flow
+|---- designs                     <- Carpeta con las fuentes y configuración de cada diseño
+      |---- src                   <- Fuentes RTL de varios proyectos
+      |---- asap7                 <- Proyectos usando el PDK asap7
+            |---- minimal         <- Proyecto de ejemplo
+                  |---- config.mk <- fichero de configuración def flujo de trabajo
+|---- platforms                   <- PDKs usados pro las herramientas
+      |---- asap7                 <- PDK asap7
+|---- scripts                     <- Scripts del flujo de trabajo
+|---- test                        <- Pruebas de integraciónd e OpenROAD
+|---- tutorial                    <- Tutorial
+|---- util                        <- Aplicaciones en python para procesar los ficheros de trabajo
+```
+
+## Ejecución de flujo de trabajo con Makefile instalado
+El flujo de trabajo que proporciona OpenROAD está encapsulado dentro de un Makefile. Ajustando algunas variables de entorno y ejecutando el comando 'make' es posible pasar de un RTL a un GDSII, teniendo la opción de investigar los resultados intermedios del flujo de trabajo.
+
+Este makefile puede ejecutarse paso a paso, incluyendo la inspección de los resultados obtenidos en cada salida.
+
+Primero entraremos el el sistema docker y configuraremos la variable de entorno DESIGN_CONFIG para que apunte a un diseño de ejemplo.
+
+``` text
+host:   user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ sh docker_gui.sh
+docker: user@user:/OpenROAD-flow-scripts$ source env.sh 
+        OPENROAD: /OpenROAD-flow-scripts/tools/OpenROAD
+docker: user@user:/OpenROAD-flow-scripts$ cd flow
+docker: user@user:/OpenROAD-flow-scripts/flow$ export DESIGN_CONFIG=./designs/asap7/aes/config.mk
+```
+
+Pasamos a relizar la compilación paso a paso del ejemplo.
+
+### Ejecución de síntesis
+Ejecutamo make con el target synth, esto lanzará los procesos de "linting" y paso de código HDL genérico a RTL usando las celdas lógicas del PDK.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make synth
+```
+
+Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados:
+
+``` text
+host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/results/asap7/aes/base$ ls 1_*
+1_1_yosys.v
+1_synth.rtlil
+1_synth.sdc
+1_synth.v
+```
+
+Podemos lanzar la GUI para inspeccionar los resultados, si bien en este punto no habrán elementos físicos que inspeccionar.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_synth
+```
+
+![make gui_synth](images/gui_synth_1.png)
+
+### Ejecución del floorplan
+Ejecutamo make con el target floorplan, esto lanzará el proceso de estimación del espacio físico necesario y generación de las líneas de alimentación.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make floorplan
+```
+
+Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados:
+
+``` text
+host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/results/asap7/aes/base$ ls 2_*
+2_1_floorplan.odb
+2_1_floorplan.sdc
+2_2_floorplan_macro.odb
+2_2_floorplan_macro.tcl
+2_3_floorplan_tapcell.odb
+2_4_floorplan_pdn.odb
+2_floorplan.odb
+2_floorplan.sdc
+```
+
+Podemos lanzar la GUI para inspeccionar los resultados. Los ficheros "odb" contienen las bases de datos con los resultados del proceso de floorplan, siendo 2_floorplan.odb el último generado y el que se visualiza con la GUI.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_floorplan
+```
+
+![make gui_floorplan](images/gui_floorplan_1.png)
+
+Podemos resaltar una de las líneas físicas para ver información en el inspector.
+
+![make gui_floorplan](images/gui_floorplan_2.png)
+
+En la zona de la izquierda, en el display control podemos activar o desactivar la visualización de distintos elementos. Por ejemplo podemos desactivar la visualización de las "Nets" de "Power" y "Ground". En este caso nos quedará solo el contorno y los "Welltaps".
+
+![make gui_floorplan](images/gui_floorplan_3.png)
