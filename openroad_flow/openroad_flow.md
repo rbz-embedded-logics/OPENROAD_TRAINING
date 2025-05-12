@@ -34,10 +34,10 @@ timeline
     : Detailed placement
   CTS : Clock Tree Synthesis
     : Timing optimization
-    : Filler cell insertion
   Routing
     : Global Routing
     : Detailed Routing
+    : Filler cell insertion
   Finishing
     : Metal Fill insertion
     : Signoff timing report
@@ -253,14 +253,24 @@ Ejecutamo make con el target synth, esto lanzará los procesos de "linting" y pa
 docker: user@user:/OpenROAD-flow-scripts/flow$ make synth
 ```
 
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+```
+
 Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados:
 
 ``` text
-host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/results/asap7/aes/base$ ls 1_*
-1_1_yosys.v
-1_synth.rtlil
-1_synth.sdc
-1_synth.v
+docker: user@user:/OpenROAD-flow-scripts/flow$ ls results/asap7/aes/base/1*
+        1_1_yosys.v
+        1_synth.rtlil
+        1_synth.sdc
+        1_synth.v
 ```
 
 Podemos lanzar la GUI para inspeccionar los resultados, si bien en este punto no habrán elementos físicos que inspeccionar.
@@ -278,19 +288,38 @@ Ejecutamo make con el target floorplan, esto lanzará el proceso de estimación 
 docker: user@user:/OpenROAD-flow-scripts/flow$ make floorplan
 ```
 
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+```
+
 Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados:
 
 ``` text
-host: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/results/asap7/aes/base$ ls 2_*
-2_1_floorplan.odb
-2_1_floorplan.sdc
-2_2_floorplan_macro.odb
-2_2_floorplan_macro.tcl
-2_3_floorplan_tapcell.odb
-2_4_floorplan_pdn.odb
-2_floorplan.odb
-2_floorplan.sdc
+docker: user@user:/OpenROAD-flow-scripts/flow$ ls results/asap7/aes/base/2*
+        2_1_floorplan.odb
+        2_1_floorplan.sdc
+        2_2_floorplan_macro.odb
+        2_2_floorplan_macro.tcl
+        2_3_floorplan_tapcell.odb
+        2_4_floorplan_pdn.odb
+        2_floorplan.odb
+        2_floorplan.sdc
 ```
+
+Los ficheros tcl generados pertenecen a este diseño y han sido a su vez generados por los tcl contenidos en el directorio scripts.
 
 Podemos lanzar la GUI para inspeccionar los resultados. Los ficheros "odb" contienen las bases de datos con los resultados del proceso de floorplan, siendo 2_floorplan.odb el último generado y el que se visualiza con la GUI.
 
@@ -302,8 +331,353 @@ docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_floorplan
 
 Podemos resaltar una de las líneas físicas para ver información en el inspector.
 
-![make gui_floorplan](images/gui_floorplan_2.png)
+![floorplan líneas](images/gui_floorplan_2.png)
 
 En la zona de la izquierda, en el display control podemos activar o desactivar la visualización de distintos elementos. Por ejemplo podemos desactivar la visualización de las "Nets" de "Power" y "Ground". En este caso nos quedará solo el contorno y los "Welltaps".
 
-![make gui_floorplan](images/gui_floorplan_3.png)
+![floorplan cambiar visualización](images/gui_floorplan_3.png)
+
+### Ejecución del placement
+Ejecutamo make con el target place, esto lanzará el proceso de colocación de los elementos lógicos y el I/O de manera optimizada.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make place
+```
+
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+```
+
+Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados:
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ ls results/asap7/aes/base/3*
+        3_1_place_gp_skip_io.odb
+        3_2_place_iop.odb
+        3_2_place_iop.tcl
+        3_3_place_gp.odb
+        3_4_place_resized.odb
+        3_5_place_dp.odb
+        3_place.odb
+        3_place.sdc
+```
+
+Podemos lanzar la GUI para inspeccionar los resultados. Los ficheros "odb" contienen las bases de datos con los resultados del proceso de place, siendo 3_place.odb el último generado y el que se visualiza con la GUI.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_place
+```
+
+![make gui_place](images/gui_place_1.png)
+
+En la imagen se ven las celdas lógicas y los I/Os distribuidos en los laterales. Si marcamos que no se vean las Nets de power y ground podemos ver que quedan resaltadas las celdas lógicas.
+
+![place celdas](images/gui_place_2.png)
+
+Haciendo zoom podemos observar las celdas lógicas que se han colocado:
+
+![place celdas detalle](images/gui_place_3.png)
+
+En el menú de visualización, en Instances -> StdCells podemos marcar la visualización de los Buffers, Combinational o Sequential que se han colocado, así veremos la distribución de los mismos.
+
+En este nivel del flujo de trabajo la herramienta ya empieza a generarnos "Heat maps" para mostar de manera gráfica algunas situaciones del diseño que serán importantes para el rendimiento y capacidad de enrutado.
+
+En la configuración de la visualización a la izquierda podemos activar las opciones de "Pin Density", "Placement Density", "Power Density" y "Estimated Congestion (RUDY)". La escala de colores va desde el azul (poca densidad, energía, pines,..) al rojo (posibles problemas de calor, congestión, problemas de rutado,...). Muchos de estos parámetros dependerán de lo estrictas que sean las condiciones de ocupación del espacio y de complimiento de tiempos.
+
+![place heat map](images/gui_place_4.png)
+
+### Ejecución del clock tree synthesis
+Ejecutamo make con el target cts, esto lanzará los procesos asociados a la síntesis del árbol de relojes y optimización de colocación de celdas.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make place
+```
+
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+    : Filler cell insertion
+```
+
+Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados:
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ ls results/asap7/aes/base/4*
+        4_1_cts.odb
+        4_after_rsz.v
+        4_before_rsz.v
+        4_cts.odb
+        4_cts.sdc
+```
+
+Los ficheros verilog indican los cambios en el netlist derivados de la insercción de buffers para poder cumplir los requisitos de timing del árbol de relojes.
+
+Podemos lanzar la GUI para inspeccionar los resultados. Los ficheros "odb" contienen las bases de datos con los resultados del proceso de place, siendo 4_cts.odb el último generado y el que se visualiza con la GUI.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_cts
+```
+
+![make gui_cts](images/gui_cts_1.png)
+
+En el menú Windows marcamos la opción Clock Tree Viewer y nos aparecerá una pestaña nueva llamada Clock Tree Viewer (marcado en amarillo en la imagen).
+
+![cts viewer](images/gui_cts_2.png)
+
+En esa pestaña pulsaremos sobre el botón de update (marcado en amarillo en la imagen) y nos aparecerá tanto el árbol de relojes en la pestaña como su representación sobre el diseño. En este punto el árbol no está rutado con lo que serán conexiones punto a punto.
+
+En la imagen se puede observar en el árbol de relojes el retardo entre el reloj de entrada y cada uno de los puntos a donde llega, este retardo está balanceado y dependerá de los requisitos de reloj y de las constraints de tiempos que se configuren. A la izquierda se puede ver el pad/señal que será el origen del reloj en este diseño.
+
+![cts viewer detail](images/gui_cts_3.png)
+
+en los "Heat maps" no hay ninguna actualización importante al haber metido unos pocos elementos lógicos de reparto del reloj.
+
+### Ejecución del routing
+Ejecutamo make con el target route, esto lanzará los procesos asociados al rutado local y global.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make route
+```
+
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+  Routing
+    : Global Routing
+    : Detailed Routing
+    : Filler cell insertion
+```
+
+Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados:
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ ls results/asap7/aes/base/5*
+        5_1_grt.odb
+        5_1_grt.sdc
+        5_2_route.odb
+        5_3_fillcell.odb
+        5_route.odb
+        5_route.sdc
+```
+
+Podemos lanzar la GUI para inspeccionar los resultados. Los ficheros "odb" contienen las bases de datos con los resultados del proceso de place, siendo 5_route.odb el último generado y el que se visualiza con la GUI.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_route
+```
+
+En la imagen podemos ver ya rutadas todas las señales del diseño:
+
+![make gui_route](images/gui_route_1.png)
+
+Si configuramos la visualización del árbol de relojes (explicado en el apartado de Ejecución del clock tree synthesis) ahora podemos ver estas señales conectadas a los distintos puntos del circuito.
+
+![route relojes](images/gui_route_2.png)
+
+Además en los "Heat Maps" ahora los valores de congestión son más "grandes" por estar las señales rutadas y las celdas ya colocadas en su posición final.
+
+![route heat maps](images/gui_route_3.png)
+
+Aquí podemos ver la comparativa entre el proceso de place (izquierda) y el de route (derecha).
+
+![route congestión comparada](images/gui_route_4.png)
+
+### Finalización del porceso de generación del GDSII
+Ejecutamo make con el target final, esto lanzará los procesos finales para la generación del GDSII.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make final
+```
+
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+  Routing
+    : Global Routing
+    : Detailed Routing
+    : Filler cell insertion
+  Finishing
+    : Metal Fill insertion
+    : Signoff timing report
+    : Generate GDSII  (KLayout)
+    : DRC/LVS check (KLayout)
+```
+
+Una vez ha terminado este proceso con éxito tendremos los ficheros con los resultados del proceso:
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ ls results/asap7/aes/base/1*
+        6_final.gds
+        6_1_fill.sdc
+        6_final.sdc
+        6_final.def
+        6_final.v
+```
+
+El fichero 6_final.gds es el fichero que contiene el diseño final listo para poder mandarse a la foundry.
+
+Podemos lanzar la GUI para inspeccionar los resultados. Los ficheros "odb" contienen las bases de datos con los resultados del proceso de place, siendo 6_final.odb el último generado y el que se visualiza con la GUI.
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_final
+```
+
+En la imagen podemos ver ya rutadas todas las señales del diseño:
+
+![make gui_final](images/gui_final_1.png)
+
+La interfaz gráfica no nos muestra más información que en pasos anteriores. En los ficheros de reporte y log si aparecen datos sobre la extarcción de parásitos y caídas de tensión.
+
+```text
+docker: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/logs/asap7/aes/test1$ cat  6_report.log
+OpenROAD HEAD-HASH-NOTFOUND 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ORD-0030] Using 32 thread(s).
+source /OpenROAD-flow-scripts/flow/platforms/asap7/setRC.tcl
+Deleted 0 routing obstructions
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[INFO RCX-0435] Reading extraction model file /OpenROAD-flow-scripts/flow/platforms/asap7/rcx_patterns.rules ...
+[INFO RCX-0436] RC segment generation aes_cipher_top (max_merge_res 50.0) ...
+[INFO RCX-0040] Final 131468 rc segments
+[INFO RCX-0439] Coupling Cap extraction aes_cipher_top ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 53% of 137210 wires extracted
+[INFO RCX-0442] 100% of 137210 wires extracted
+[INFO RCX-0045] Extract 17621 nets, 148853 rsegs, 148853 caps, 215576 ccs
+[INFO RCX-0443] 17621 nets finished
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 7.70e-01 V
+Worstcase voltage: 7.50e-01 V
+Average voltage  : 7.64e-01 V
+Average IR drop  : 6.49e-03 V
+Worstcase IR drop: 2.02e-02 V
+Percentage drop  : 2.62 %
+######################################
+[INFO PSM-0040] All shapes on net VSS are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : VSS
+Corner           : default
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 2.09e-02 V
+Average voltage  : 6.52e-03 V
+Average IR drop  : 6.52e-03 V
+Worstcase IR drop: 2.09e-02 V
+Percentage drop  : 2.72 %
+######################################
+Cell type report:                       Count       Area
+  Fill cell                             19058    2159.30
+  Tap cell                                725      21.14
+  Buffer                                 1122     256.35
+  Clock buffer                             25      10.59
+  Timing Repair Buffer                   1118     103.91
+  Inverter                               1216      67.96
+  Clock inverter                           21       9.14
+  Timing Repair inverter                    4       0.31
+  Sequential cell                         562     173.30
+  Multi-Input combinational cell        13038    1453.20
+  Total                                 36889    4255.19
+Report metrics stage 6, finish...
+
+==========================================================================
+finish report_design_area
+--------------------------------------------------------------------------
+Design area 2075 u^2 49% utilization.
+```
+
+Podemos ver el GDSII generado usando la herramienta klayout:
+
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ klayout results/asap7/aes/test1/6_final.gds
+```
+
+![klayout final](images/gui_final_2.png)
