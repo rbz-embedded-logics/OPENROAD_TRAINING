@@ -613,7 +613,7 @@ En la imagen podemos ver ya rutadas todas las señales del diseño:
 La interfaz gráfica no nos muestra más información que en pasos anteriores. En los ficheros de reporte y log si aparecen datos sobre la extracción de parásitos y caídas de tensión.
 
 ```text
-docker: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/logs/asap7/aes/test1$ cat  6_report.log
+docker: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/logs/asap7/aes/base$ cat  6_report.log
 OpenROAD HEAD-HASH-NOTFOUND 
 Features included (+) or not (-): +GPU +GUI +Python
 This program is licensed under the BSD-3 license. See the LICENSE file for details.
@@ -698,7 +698,7 @@ Total                  6.79e-02   9.05e-02   1.49e-06   1.58e-01 100.0%
 Podemos ver el GDSII generado usando la herramienta klayout:
 
 ```text
-docker: user@user:/OpenROAD-flow-scripts/flow$ klayout results/asap7/aes/test1/6_final.gds
+docker: user@user:/OpenROAD-flow-scripts/flow$ klayout results/asap7/aes/base/6_final.gds
 ```
 
 ![klayout final](images/gui_final_2.png)
