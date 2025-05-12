@@ -676,9 +676,28 @@ finish report_design_area
 Design area 2075 u^2 49% utilization.
 ```
 
+``` text
+docker: user@user:/OpenROAD-flow-scripts/flow$ tail -n 15 reports/asap7/aes/base/6_finish.rpt
+==========================================================================
+finish report_power
+--------------------------------------------------------------------------
+Group                  Internal  Switching    Leakage      Total
+                          Power      Power      Power      Power (Watts)
+----------------------------------------------------------------
+Sequential             4.74e-03   1.23e-03   1.08e-07   5.97e-03   3.8%
+Combinational          6.22e-02   8.82e-02   1.36e-06   1.50e-01  95.0%
+Clock                  9.40e-04   1.08e-03   1.63e-08   2.02e-03   1.3%
+Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+----------------------------------------------------------------
+Total                  6.79e-02   9.05e-02   1.49e-06   1.58e-01 100.0%
+                          42.9%      57.1%       0.0%
+
+```
+
 Podemos ver el GDSII generado usando la herramienta klayout:
 
-``` text
+```text
 docker: user@user:/OpenROAD-flow-scripts/flow$ klayout results/asap7/aes/test1/6_final.gds
 ```
 
