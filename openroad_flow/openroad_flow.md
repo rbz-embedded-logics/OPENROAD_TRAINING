@@ -1,4 +1,4 @@
-# Tutorial de manejo de Openroad
+# Tutorial de manejo de OpenROAD
 
 ## Descripción
 
@@ -47,12 +47,14 @@ timeline
 
 Este tutorial usará este flujo de trabajo, si bien no es el único existente. 
 
-OpenROAd ha sido usado también en las siguientes herramientas:
+OpenROAD ha sido usado también en las siguientes herramientas:
 - [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/openROAD-flow-scripts) de [OpenROAD](https://theopenroadproject.org/)
 - [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) de [Efabless](https://efabless.com/)
 - [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler) de [Zero ASIC](https://www.zeroasic.com/)
 - [Hammer](https://docs.hammer-eda.org/en/latest/Examples/openroad-nangate45.html)  de [UC Berkeley](https://github.com/ucb-bar)
 - [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) de [IDEA-FASoC](https://github.com/idea-fasoc) orientado al diseño de señal mixta
+
+Las instrucciones están traducidas y ampliadas de las ya existentes en OpenROAD
 
 ## Instalación
 Para la instalación del flujo de trabajo seguiremos las instrucciones del repositorio OpenROAD-flow-scripts. Estas instrucciones permiten generar una imagen con todas las herramientas necesarias sobre el sistema docker.
@@ -69,7 +71,7 @@ cd Proyectos/demo_openroad
 ```
 
 ### Descargar las fuentes
-Estas instruccione sbuscan obtener la última versón estable del software, si se quiere un release oficial se deberá bajar un TAG del proyecto.
+Estas instrucciones buscan obtener la última versión estable del software, si se quiere un release oficial se deberá bajar un TAG del proyecto.
 
 Con el navegador accederemos a la web en github del proyecto [The-OpenROAD-Project/OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git). Una vez ahí deberemos buscar el histórico de cambios del software, en la siguiente imagen es la zona resaltada en amarillo:
 
@@ -107,7 +109,7 @@ Una vez establecidas las fuentes ejecutamos el script de instalación del sistem
 
 El proceso de compilación e instalación es bastante largo, pudiendo requerir de 10/30min dependiendo de la conexión y capacidad de procesamiento del ordenador.
 
-Una vez completado con éxito tendremos una imagen docker que podemos utilizar. Usando comandos de coker podemos obtener la información:
+Una vez completado con éxito tendremos una imagen docker que podemos utilizar. Usando comandos de docker podemos obtener la información:
 
 ``` text
 user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ docker images
@@ -159,7 +161,7 @@ Yosys 0.51 (git sha1 c4b519022, g++ 11.4.0-1ubuntu1~22.04 -fPIC -O3)
 user@user:/OpenROAD-flow-scripts$ source env.sh 
 OPENROAD: /OpenROAD-flow-scripts/tools/OpenROAD
 
-# ejecutamos la consola de openroad
+# ejecutamos la consola de OpenROAD
 user@user:/OpenROAD-flow-scripts$ openroad 
 OpenROAD HEAD-HASH-NOTFOUND 
 Features included (+) or not (-): +GPU +GUI +Python
@@ -234,7 +236,7 @@ El flujo de trabajo que proporciona OpenROAD está encapsulado dentro de un Make
 
 Este makefile puede ejecutarse paso a paso, incluyendo la inspección de los resultados obtenidos en cada salida.
 
-Primero entraremos el el sistema docker y configuraremos la variable de entorno DESIGN_CONFIG para que apunte a un diseño de ejemplo.
+Primero entraremos en el sistema docker y configuraremos la variable de entorno DESIGN_CONFIG para que apunte a un diseño de ejemplo.
 
 ``` text
 host:   user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ sh docker_gui.sh
@@ -244,7 +246,7 @@ docker: user@user:/OpenROAD-flow-scripts$ cd flow
 docker: user@user:/OpenROAD-flow-scripts/flow$ export DESIGN_CONFIG=./designs/asap7/aes/config.mk
 ```
 
-Pasamos a relizar la compilación paso a paso del ejemplo.
+Pasamos a realizar la compilación paso a paso del ejemplo.
 
 ### Ejecución de síntesis
 Ejecutamo make con el target synth, esto lanzará los procesos de "linting" y paso de código HDL genérico a RTL usando las celdas lógicas del PDK.
@@ -282,7 +284,7 @@ docker: user@user:/OpenROAD-flow-scripts/flow$ make gui_synth
 ![make gui_synth](images/gui_synth_1.png)
 
 ### Ejecución del floorplan
-Ejecutamo make con el target floorplan, esto lanzará el proceso de estimación del espacio físico necesario y generación de las líneas de alimentación.
+Ejecutamos make con el target floorplan, esto lanzará el proceso de estimación del espacio físico necesario y generación de las líneas de alimentación.
 
 ``` text
 docker: user@user:/OpenROAD-flow-scripts/flow$ make floorplan
@@ -338,7 +340,7 @@ En la zona de la izquierda, en el display control podemos activar o desactivar l
 ![floorplan cambiar visualización](images/gui_floorplan_3.png)
 
 ### Ejecución del placement
-Ejecutamo make con el target place, esto lanzará el proceso de colocación de los elementos lógicos y el I/O de manera optimizada.
+Ejecutamos make con el target place, esto lanzará el proceso de colocación de los elementos lógicos y el I/O de manera optimizada.
 
 ``` text
 docker: user@user:/OpenROAD-flow-scripts/flow$ make place
@@ -399,14 +401,14 @@ Haciendo zoom podemos observar las celdas lógicas que se han colocado:
 
 En el menú de visualización, en Instances -> StdCells podemos marcar la visualización de los Buffers, Combinational o Sequential que se han colocado, así veremos la distribución de los mismos.
 
-En este nivel del flujo de trabajo la herramienta ya empieza a generarnos "Heat maps" para mostar de manera gráfica algunas situaciones del diseño que serán importantes para el rendimiento y capacidad de enrutado.
+En este nivel del flujo de trabajo la herramienta ya empieza a generarnos "Heat maps" para mostrar de manera gráfica algunas situaciones del diseño que serán importantes para el rendimiento y capacidad de enrutado.
 
 En la configuración de la visualización a la izquierda podemos activar las opciones de "Pin Density", "Placement Density", "Power Density" y "Estimated Congestion (RUDY)". La escala de colores va desde el azul (poca densidad, energía, pines,..) al rojo (posibles problemas de calor, congestión, problemas de rutado,...). Muchos de estos parámetros dependerán de lo estrictas que sean las condiciones de ocupación del espacio y de complimiento de tiempos.
 
 ![place heat map](images/gui_place_4.png)
 
 ### Ejecución del clock tree synthesis
-Ejecutamo make con el target cts, esto lanzará los procesos asociados a la síntesis del árbol de relojes y optimización de colocación de celdas.
+Ejecutamos make con el target cts, esto lanzará los procesos asociados a la síntesis del árbol de relojes y optimización de colocación de celdas.
 
 ``` text
 docker: user@user:/OpenROAD-flow-scripts/flow$ make place
@@ -450,7 +452,7 @@ docker: user@user:/OpenROAD-flow-scripts/flow$ ls results/asap7/aes/base/4*
         4_cts.sdc
 ```
 
-Los ficheros verilog indican los cambios en el netlist derivados de la insercción de buffers para poder cumplir los requisitos de timing del árbol de relojes.
+Los ficheros verilog indican los cambios en el netlist derivados de la inserción de buffers para poder cumplir los requisitos de timing del árbol de relojes.
 
 Podemos lanzar la GUI para inspeccionar los resultados. Los ficheros "odb" contienen las bases de datos con los resultados del proceso de place, siendo 4_cts.odb el último generado y el que se visualiza con la GUI.
 
@@ -473,7 +475,7 @@ En la imagen se puede observar en el árbol de relojes el retardo entre el reloj
 en los "Heat maps" no hay ninguna actualización importante al haber metido unos pocos elementos lógicos de reparto del reloj.
 
 ### Ejecución del routing
-Ejecutamo make con el target route, esto lanzará los procesos asociados al rutado local y global.
+Ejecutamos make con el target route, esto lanzará los procesos asociados al rutado local y global.
 
 ``` text
 docker: user@user:/OpenROAD-flow-scripts/flow$ make route
@@ -535,7 +537,7 @@ Si configuramos la visualización del árbol de relojes (explicado en el apartad
 
 ![route relojes](images/gui_route_2.png)
 
-Además en los "Heat Maps" ahora los valores de congestión son más "grandes" por estar las señales rutadas y las celdas ya colocadas en su posición final.
+Además, en los "Heat Maps" ahora los valores de congestión son más "grandes" por estar las señales rutadas y las celdas ya colocadas en su posición final.
 
 ![route heat maps](images/gui_route_3.png)
 
@@ -544,7 +546,7 @@ Aquí podemos ver la comparativa entre el proceso de place (izquierda) y el de r
 ![route congestión comparada](images/gui_route_4.png)
 
 ### Finalización del porceso de generación del GDSII
-Ejecutamo make con el target final, esto lanzará los procesos finales para la generación del GDSII.
+Ejecutamos make con el target final, esto lanzará los procesos finales para la generación del GDSII.
 
 ``` text
 docker: user@user:/OpenROAD-flow-scripts/flow$ make final
@@ -608,7 +610,7 @@ En la imagen podemos ver ya rutadas todas las señales del diseño:
 
 ![make gui_final](images/gui_final_1.png)
 
-La interfaz gráfica no nos muestra más información que en pasos anteriores. En los ficheros de reporte y log si aparecen datos sobre la extarcción de parásitos y caídas de tensión.
+La interfaz gráfica no nos muestra más información que en pasos anteriores. En los ficheros de reporte y log si aparecen datos sobre la extracción de parásitos y caídas de tensión.
 
 ```text
 docker: user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/logs/asap7/aes/test1$ cat  6_report.log
