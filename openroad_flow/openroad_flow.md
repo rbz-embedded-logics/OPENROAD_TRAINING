@@ -66,7 +66,7 @@ Dentro de la carpeta HOME del usuario se crea una carpeta de proyectos y dentro 
 
 ``` text
 cd ~
-mkdir Proyectos/demo_openroad
+mkdir -p Proyectos/demo_openroad
 cd Proyectos/demo_openroad
 ```
 
@@ -192,6 +192,7 @@ user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ echo docker run --rm 
            --network host \
            --security-opt seccomp=unconfined \
            openroad/flow-ubuntu22.04-builder:8287a5 > docker_gui.sh
+user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ chmod +x docker_gui.sh
 ```
 
 A partir de aquí se va a seguir el siguiente flujo de trabajo:
@@ -411,7 +412,7 @@ En la configuración de la visualización a la izquierda podemos activar las opc
 Ejecutamos make con el target cts, esto lanzará los procesos asociados a la síntesis del árbol de relojes y optimización de colocación de celdas.
 
 ``` text
-docker: user@user:/OpenROAD-flow-scripts/flow$ make place
+docker: user@user:/OpenROAD-flow-scripts/flow$ make cts
 ```
 
 ```mermaid
