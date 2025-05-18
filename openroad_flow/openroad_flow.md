@@ -1,4 +1,4 @@
-# Tutorial de manejo de OpenROAD
+# Descripción de manejo de OpenROAD
 
 ## Descripción
 
