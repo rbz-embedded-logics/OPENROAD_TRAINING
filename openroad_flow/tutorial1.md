@@ -7,6 +7,7 @@
 - [Fuentes del flujo de trabajo digital de OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 - [Dcumentación del flujo de trabajo digital de OpenROAD](https://openroad-flow-scripts.readthedocs.io/en/latest/index2.html)
 - [Documentación del PDK ihp13sg2](https://github.com/IHP-GmbH/IHP-Open-PDK)
+- [Curso del ETH de Zurich, incluye más detalles sobre diseño VLSI](https://vlsi.ethz.ch/wiki/VLSI_Lectures)
 
 ## 1. Instalación
 
