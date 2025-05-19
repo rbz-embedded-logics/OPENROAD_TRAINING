@@ -1,5 +1,13 @@
 # Tutorial de manejo de OpenROAD
 
+## 0. Enlaces de interés
+
+- [Fuentes de OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD/)
+- [Documentación de OpenROAD](https://openroad.readthedocs.io/en/latest/index.html)
+- [Fuentes del flujo de trabajo digital de OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
+- [Dcumentación del flujo de trabajo digital de OpenROAD](https://openroad-flow-scripts.readthedocs.io/en/latest/index2.html)
+- [Documentación del PDK ihp13sg2](https://github.com/IHP-GmbH/IHP-Open-PDK)
+
 ## 1. Instalación
 
 Bajamos las fuentes:
