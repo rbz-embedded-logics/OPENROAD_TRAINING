@@ -10,6 +10,15 @@
 
 ## 1. Instalación
 
+Si es necesario instalamos docker y docker compose:
+
+``` text
+sudo apt  install docker.io
+sudo apt-get install docker-buildx
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
 Bajamos las fuentes:
 
 ``` text
