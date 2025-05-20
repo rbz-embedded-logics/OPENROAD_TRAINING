@@ -11,6 +11,7 @@
 
 ## 1. Instalación
 
+## 1.1 Si docker no está instalado
 Si es necesario instalamos docker y docker compose:
 
 ``` text
@@ -20,9 +21,22 @@ sudo usermod -aG docker $USER
 newgrp docker
 ```
 
+## 1.2 Instruciones especiales laboratorio cátedra chip
+
+Instrucciones necesarias para terminar de prepara el entorno Linux instalado:
+
+``` text
+docker context use default
+sudo xhost +local:docker
+docker system prune -a
+```
+
+## 1.3 Descarga de fuentes y compilación 
+
 Bajamos las fuentes:
 
 ``` text
+mkdir -p ~/Proyectos/demo_openroad
 cd ~/Proyectos/demo_openroad
 git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git
 cd OpenROAD-flow-scripts
@@ -120,7 +134,12 @@ make
 
 ## 3. Prácticas
 
-### 3.1 RTL-GDSII de un perférico
+### 3.1 RTL-GDSII de un ejemplo más complejo
+En los ejemplos, dentro del ihp-sg13g2, está el proyecto i2c-gpio-expander, este proyecto represneta el flujo completo incluyendo i/o. Este proyecto es una referencia que ha sido fabricada en silicio.
+
+Regenere el ejemplo para visualizarlo.
+
+### 3.2 RTL-GDSII de un perférico
 
 Tomar el RTL de este repositorio:
 
@@ -130,7 +149,7 @@ Generar la configuración en sky130hd, ihp-sg13g2 y asap7. Se debe generar un GD
 
 Recuerde que las unidades de las constraints de tiempos dependen del PDK. En sky130hd y ihp-sg13g2 son en "ns" y en asap7 en "ps".
 
-### 3.2 RTL-GDSII de un SOC
+### 3.3 RTL-GDSII de un SOC
 
 Tomar el RTL de este repositorio:
 
@@ -138,7 +157,7 @@ https://github.com/YosysHQ/picorv32
 
 Generar una configuración para sintetizar el picosoc en el PDK ihp-sg13g2 con un objetivo de frecuencia de reloj de 50MHz.
 
-### 3.2 RTL-GDSII de un SOC modificado
+### 3.4 RTL-GDSII de un SOC modificado
 
 Modificar el SOC anterior para cambiar la implementación del procesador con el bus de memoria simple por un wishbone, añadir un periférico por wishbone para el manejo de 8 señales de salida y 8 de entrada. Aumentar la memoria RAM del procesador hasta 1Kbyte.
 
