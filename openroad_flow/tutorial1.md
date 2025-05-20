@@ -126,8 +126,8 @@ make cts
 make gui_cts
 make route
 make gui_route
-make finish
-make gui_finish
+make final
+make gui_final
 make clean_all
 make
 ```
