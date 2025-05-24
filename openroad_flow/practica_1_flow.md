@@ -1,6 +1,9 @@
 # Tutorial de manejo de OpenROAD
 
-## 0. Enlaces de interés
+## Introducción
+Este ejercicio busca replicar los pasos de uso de las herramientas con un ejemplo ya existente.
+
+## Enlaces de interés
 
 - [Fuentes de OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD/)
 - [Documentación de OpenROAD](https://openroad.readthedocs.io/en/latest/index.html)
@@ -9,9 +12,9 @@
 - [Documentación del PDK ihp13sg2](https://github.com/IHP-GmbH/IHP-Open-PDK)
 - [Curso del ETH de Zurich, incluye más detalles sobre diseño VLSI](https://vlsi.ethz.ch/wiki/VLSI_Lectures)
 
-## 1. Instalación
+# Instalación
 
-## 1.1 Si docker no está instalado
+## Si docker no está instalado
 Si es necesario instalamos docker y docker compose:
 
 ``` text
@@ -21,7 +24,7 @@ sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-## 1.2 Instruciones especiales laboratorio cátedra chip
+## Instruciones especiales laboratorio cátedra chip
 
 Instrucciones necesarias para terminar de prepara el entorno Linux instalado:
 
@@ -31,7 +34,7 @@ sudo xhost +local:docker
 docker system prune -a
 ```
 
-## 1.3 Descarga de fuentes y compilación 
+## Descarga de fuentes y compilación 
 
 Bajamos las fuentes:
 
@@ -95,7 +98,7 @@ Para salir de la consola de OpenROAD se debe ejecutar el comando 'exit'.
 Recomendamos grabar el contenido del comando de ejecución del docker en un script llamado 'docker_gui.sh' para poder ejecutarlo de manera más sencilla.
 
 ``` text
-user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ echo docker run --rm -it \
+docker run --rm -it \
            -u $(id -u ${USER}):$(id -g ${USER}) \
            -v $(pwd)/flow:/OpenROAD-flow-scripts/flow \
                    -v /etc/passwd:/etc/passwd:ro \
@@ -105,11 +108,10 @@ user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ echo docker run --rm 
            -v ${HOME}/.Xauthority:/.Xauthority \
            --network host \
            --security-opt seccomp=unconfined \
-           openroad/flow-ubuntu22.04-builder:8287a5 > docker_gui.sh
-user@user:~/Proyectos/demo_openroad/OpenROAD-flow-scripts$ chmod +x docker_gui.sh
+           openroad/flow-ubuntu22.04-builder:8287a5
 ```
 
-## 2. Flujo de trabajo de ejemplo
+## Flujo de trabajo de ejemplo
 
 ``` text
 sh docker_gui.sh
@@ -132,33 +134,19 @@ make clean_all
 make
 ```
 
-## 3. Prácticas
+# Ejercicio final
 
-### 3.1 RTL-GDSII de un ejemplo más complejo
-En los ejemplos, dentro del ihp-sg13g2, está el proyecto i2c-gpio-expander, este proyecto represneta el flujo completo incluyendo i/o. Este proyecto es una referencia que ha sido fabricada en silicio.
+## Flujos RTL-GDSII de un ejemplo más complejo
+En los ejemplos, dentro del ihp-sg13g2, está el proyecto i2c-gpio-expander, este proyecto representa el flujo completo incluyendo i/o. Este proyecto es una referencia que ha sido fabricada en silicio.
 
-Regenere el ejemplo para visualizarlo.
+Regenere el ejemplo para visualizarlo en los distintos pasos.
 
-### 3.2 RTL-GDSII de un perférico
+### RTL-GDSII con ejemplo modificado
+En los ejemplos, dentro del sky130hd está el proyecto riscv32i.
 
-Tomar el RTL de este repositorio:
+Ajuste el valor de CORE_UTILIZATION a valores del 25% y 75%, observe el impacto en el tamaño de la pieza y la dificultad en conseguir cumplir los requisitos de tiempo.
 
-https://github.com/stephanosio/BPSKModem.git
 
-Generar la configuración en sky130hd, ihp-sg13g2 y asap7. Se debe generar un GDS lo más pequeño posible, cumpliento los tiempos de hold y slack y con un objetivo de frecuencia de reloj de 200MHz para sky130hd, ihp-sg13g2 y de 1GHz para asap7.
 
-Recuerde que las unidades de las constraints de tiempos dependen del PDK. En sky130hd y ihp-sg13g2 son en "ns" y en asap7 en "ps".
 
-### 3.3 RTL-GDSII de un SOC
 
-Tomar el RTL de este repositorio:
-
-https://github.com/YosysHQ/picorv32
-
-Generar una configuración para sintetizar el picosoc en el PDK ihp-sg13g2 con un objetivo de frecuencia de reloj de 50MHz.
-
-### 3.4 RTL-GDSII de un SOC modificado
-
-Modificar el SOC anterior para cambiar la implementación del procesador con el bus de memoria simple por un wishbone, añadir un periférico por wishbone para el manejo de 8 señales de salida y 8 de entrada. Aumentar la memoria RAM del procesador hasta 1Kbyte.
-
-Generar una configuración para sintetizar este picosoc en el PDK ihp-sg13g2 con un objetivo de frecuencia de reloj de 50MHz.
