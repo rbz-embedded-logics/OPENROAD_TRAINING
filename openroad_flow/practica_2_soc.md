@@ -614,6 +614,44 @@ endmodule
 `endcelldefine
 ```
 
+En el fichero `lib/sg13g2_io_typ_1p2V_3p3V_25C.lib` podemos ver las características de estos bloques a nivel eléctrico. Estos es importante para ajustar en el fichero de constraints los retardos de las señales (configuración en bloque de `timing` en ese fichero).
+
+```
+pin (pad) {
+      direction : "inout";
+      is_pad : true;
+      function : "c2p";
+      three_state : "c2p_en'";
+      drive_current : 4;
+      output_voltage : "pad";
+      input_voltage : "pad";
+      related_ground_pin : iovss;
+      related_power_pin : iovdd;
+      max_capacitance : 1.07593;
+      capacitance : 0.188577;
+      rise_capacitance : 0.189895;
+      rise_capacitance_range (0.162282, 0.208866);
+      fall_capacitance : 0.187258;
+      fall_capacitance_range (0.166164, 0.200869);
+      timing () {
+        related_pin : "c2p";
+        timing_sense : positive_unate;
+        timing_type : combinational;
+        cell_rise (delay_template_7x6_16) {
+          index_1 ("0.02, 0.1, 0.17, 0.33, 0.64, 1.26, 2.5");
+          index_2 ("1, 2, 3, 4, 7, 10");
+          values ( \
+            "1.54948, 1.98537, 2.41868, 2.85128, 4.1479, 5.44429", \
+            "1.56845, 2.00432, 2.43764, 2.87024, 4.16695, 5.4629", \
+            "1.58291, 2.01883, 2.45217, 2.88478, 4.18153, 5.47811", \
+            "1.60745, 2.04325, 2.47656, 2.90912, 4.20581, 5.50245", \
+            "1.63562, 2.07151, 2.50485, 2.9375, 4.23404, 5.53004", \
+            "1.6732, 2.10917, 2.54258, 2.9752, 4.27173, 5.56774", \
+            "1.71191, 2.14777, 2.58125, 3.01361, 4.31037, 5.60624" \
+          );
+        }
+```
+
 En el fichero `lef/sg13g2_io.lef` podemos ver las definiciones de la geometría de las celdas. Por ejemplo para el caso del sg13g2_IOPadTriOut4mA podemos ver las capas en las que están las señales:
 
 ```
@@ -677,29 +715,524 @@ touch picosoc_ihp.v
 El wrapper de verilog del SoC se genera en la carpeta del proyecto para tenerlo asociado al proyecto de este PDK.
 
 ## Creación del wrapper de verilog del SoC
-Vamos a editar el fichero `picosoc_ihp.v` con este contenido:
+Dentro de la carpeta del proyecto vamos a editar el fichero `picosoc_ihp.v`. Este fichero contiene un wrapper que permite unir las señales del SOC diseñado en los appartados anteriores con los PADs del procesador.
+
+En este primera versión solo se usan PADs de entrada (sg13g2_IOPadIn) y PADs de salida con una corriente máxima de salida de 4mA (sg13g2_IOPadOut4mA).
+
+En este fichero las distintas señales se van conectando a los PADs y además es posible incluir lógica, en este ejemplo algunas señales están siendo registradas (dentro del bloque always) mientras que otras se conectan de manera asíncrona.
+
+Este es el código resultante:
 
 ```
+`timescale 1ns/1ps
 
+// definimos las señales que estarán conectadas a los I/O
+module picosoc_ihp (
+  inout  wire        io_clk_PAD,
+  inout  wire        io_resetn_PAD,
+  inout  wire        io_irq_5_PAD,
+  inout  wire        io_irq_6_PAD,
+  inout  wire        io_irq_7_PAD,
+  inout  wire        io_irq_8_PAD,
+  inout  wire        io_irq_9_PAD,
+  inout  wire        io_irq_10_PAD,
+  inout  wire        io_irq_11_PAD,
+  inout  wire        io_ser_tx_PAD,
+  inout  wire        io_ser_rx_PAD, 
+  inout  wire        io_flash_csb_PAD,
+  inout  wire        io_flash_clk_PAD,
+  inout  wire        io_flash_io0_oe_PAD,
+  inout  wire        io_flash_io1_oe_PAD,
+  inout  wire        io_flash_io2_oe_PAD,
+  inout  wire        io_flash_io3_oe_PAD,
+  inout  wire        io_flash_io0_do_PAD,
+  inout  wire        io_flash_io1_do_PAD,
+  inout  wire        io_flash_io2_do_PAD,
+  inout  wire        io_flash_io3_do_PAD,
+  inout  wire        io_flash_io0_di_PAD,
+  inout  wire        io_flash_io1_di_PAD,
+  inout  wire        io_flash_io2_di_PAD,
+  inout  wire        io_flash_io3_di_PAD
+);
+
+ wire sg13g2_IOPad_io_clock_p2c;
+ wire sg13g2_IOPad_io_reset_p2c;
+ wire clock;
+ wire reset;
+
+ wire sg13g2_IOPad_io_irq_5_p2c;
+ wire sg13g2_IOPad_io_irq_6_p2c;
+ wire sg13g2_IOPad_io_irq_7_p2c;
+ wire sg13g2_IOPad_io_irq_8_p2c;
+ wire sg13g2_IOPad_io_irq_9_p2c;
+ wire sg13g2_IOPad_io_irq_10_p2c;
+ wire sg13g2_IOPad_io_irq_11_p2c;
+ reg  irq_5_p2c;
+ reg  irq_6_p2c;
+ reg  irq_7_p2c;
+ reg  irq_8_p2c;
+ reg  irq_9_p2c;
+ reg  irq_10_p2c;
+ reg  irq_11_p2c;
+
+ wire sg13g2_IOPad_io_ser_tx_c2p;
+ wire sg13g2_IOPad_io_ser_rx_p2c;
+
+ wire sg13g2_IOPad_io_flash_csb_c2p;
+ wire sg13g2_IOPad_io_flash_clk_c2p;
+
+ wire sg13g2_IOPad_io_flash_io0_oe_c2p;
+ wire sg13g2_IOPad_io_flash_io1_oe_c2p;
+ wire sg13g2_IOPad_io_flash_io2_oe_c2p;
+ wire sg13g2_IOPad_io_flash_io3_oe_c2p;
+ wire sg13g2_IOPad_io_flash_io0_do_c2p;
+ wire sg13g2_IOPad_io_flash_io1_do_c2p;
+ wire sg13g2_IOPad_io_flash_io2_do_c2p;
+ wire sg13g2_IOPad_io_flash_io3_do_c2p;
+ wire sg13g2_IOPad_io_flash_io0_di_p2c;
+ wire sg13g2_IOPad_io_flash_io1_di_p2c;
+ wire sg13g2_IOPad_io_flash_io2_di_p2c;
+ wire sg13g2_IOPad_io_flash_io3_di_p2c;
+
+ // Clock
+ sg13g2_IOPadIn sg13g2_IOPad_io_clock (.p2c (sg13g2_IOPad_io_clock_p2c), .pad (io_clk_PAD));
+ // Reset
+ sg13g2_IOPadIn sg13g2_IOPad_io_reset (.p2c (sg13g2_IOPad_io_reset_p2c), .pad (io_resetn_PAD));
+ // IRQ
+ sg13g2_IOPadIn sg13g2_IOPad_io_irq_5  (.p2c (sg13g2_IOPad_io_irq_5_p2c),  .pad (io_irq_5_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_irq_6  (.p2c (sg13g2_IOPad_io_irq_6_p2c),  .pad (io_irq_6_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_irq_7  (.p2c (sg13g2_IOPad_io_irq_7_p2c),  .pad (io_irq_7_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_irq_8  (.p2c (sg13g2_IOPad_io_irq_8_p2c),  .pad (io_irq_8_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_irq_9  (.p2c (sg13g2_IOPad_io_irq_9_p2c),  .pad (io_irq_9_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_irq_10 (.p2c (sg13g2_IOPad_io_irq_10_p2c), .pad (io_irq_10_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_irq_11 (.p2c (sg13g2_IOPad_io_irq_11_p2c), .pad (io_irq_11_PAD));
+ // UART
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_ser_tx (.c2p (sg13g2_IOPad_io_ser_tx_c2p), .pad (io_ser_tx_PAD));
+ sg13g2_IOPadIn     sg13g2_IOPad_io_ser_rx (.p2c (sg13g2_IOPad_io_ser_rx_p2c), .pad (io_ser_rx_PAD));
+
+ // Flash controllers
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_csb (.c2p (sg13g2_IOPad_io_flash_csb_c2p), .pad (io_flash_csb_PAD));
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_clk (.c2p (sg13g2_IOPad_io_flash_clk_c2p), .pad (io_flash_clk_PAD));
+
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io0_oe (.c2p (sg13g2_IOPad_io_flash_io0_oe_c2p), .pad (io_flash_io0_oe_PAD));
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io1_oe (.c2p (sg13g2_IOPad_io_flash_io1_oe_c2p), .pad (io_flash_io1_oe_PAD));
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io2_oe (.c2p (sg13g2_IOPad_io_flash_io2_oe_c2p), .pad (io_flash_io2_oe_PAD));
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io3_oe (.c2p (sg13g2_IOPad_io_flash_io3_oe_c2p), .pad (io_flash_io3_oe_PAD));
+
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io0_do (.c2p (sg13g2_IOPad_io_flash_io0_do_c2p), .pad (io_flash_io0_do_PAD));
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io1_do (.c2p (sg13g2_IOPad_io_flash_io1_do_c2p), .pad (io_flash_io1_do_PAD));
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io2_do (.c2p (sg13g2_IOPad_io_flash_io2_do_c2p), .pad (io_flash_io2_do_PAD));
+ sg13g2_IOPadOut4mA sg13g2_IOPad_io_flash_io3_do (.c2p (sg13g2_IOPad_io_flash_io3_do_c2p), .pad (io_flash_io3_do_PAD));
+
+ sg13g2_IOPadIn sg13g2_IOPad_io_flash_io0_di (.p2c (sg13g2_IOPad_io_flash_io0_di_p2c), .pad (io_flash_io0_di_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_flash_io1_di (.p2c (sg13g2_IOPad_io_flash_io1_di_p2c), .pad (io_flash_io1_di_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_flash_io2_di (.p2c (sg13g2_IOPad_io_flash_io2_di_p2c), .pad (io_flash_io2_di_PAD));
+ sg13g2_IOPadIn sg13g2_IOPad_io_flash_io3_di (.p2c (sg13g2_IOPad_io_flash_io3_di_p2c), .pad (io_flash_io3_di_PAD));
+
+ // async signals
+ assign clock = sg13g2_IOPad_io_clock_p2c;
+ assign reset = sg13g2_IOPad_io_reset_p2c;
+
+ // sync signals
+ always @(*) begin
+    irq_5_p2c  = sg13g2_IOPad_io_irq_5_p2c;
+    irq_6_p2c  = sg13g2_IOPad_io_irq_6_p2c;
+    irq_7_p2c  = sg13g2_IOPad_io_irq_7_p2c;
+    irq_8_p2c  = sg13g2_IOPad_io_irq_8_p2c;
+    irq_9_p2c  = sg13g2_IOPad_io_irq_9_p2c;
+    irq_10_p2c = sg13g2_IOPad_io_irq_10_p2c;
+    irq_11_p2c = sg13g2_IOPad_io_irq_11_p2c;
+ end
+
+ picosoc picosoc_core (
+	.clk(clock),
+	.resetn(reset),
+    .irq_5(irq_5_p2c),
+    .irq_6(irq_6_p2c),
+    .irq_7(irq_7_p2c),
+    .irq_8(irq_8_p2c),
+    .irq_9(irq_9_p2c),
+    .irq_10(irq_10_p2c),
+    .irq_11(irq_11_p2c),
+    // suponemos que estas señales son registradas en el periférico
+    .ser_tx(sg13g2_IOPad_io_ser_tx_c2p),
+    .ser_rx(sg13g2_IOPad_io_ser_rx_p2c),
+    .flash_csb(sg13g2_IOPad_io_flash_csb_c2p),
+    .flash_clk(sg13g2_IOPad_io_flash_clk_c2p),
+	.flash_io0_oe(sg13g2_IOPad_io_flash_io0_oe_c2p),
+	.flash_io1_oe(sg13g2_IOPad_io_flash_io1_oe_c2p),
+	.flash_io2_oe(sg13g2_IOPad_io_flash_io2_oe_c2p),
+	.flash_io3_oe(sg13g2_IOPad_io_flash_io3_oe_c2p),
+    .flash_io0_do(sg13g2_IOPad_io_flash_io0_do_c2p),
+	.flash_io1_do(sg13g2_IOPad_io_flash_io1_do_c2p),
+	.flash_io2_do(sg13g2_IOPad_io_flash_io2_do_c2p),
+	.flash_io3_do(sg13g2_IOPad_io_flash_io3_do_c2p),
+	.flash_io0_di(sg13g2_IOPad_io_flash_io0_di_p2c),
+	.flash_io1_di(sg13g2_IOPad_io_flash_io1_di_p2c),
+	.flash_io2_di(sg13g2_IOPad_io_flash_io2_di_p2c),
+	.flash_io3_di(sg13g2_IOPad_io_flash_io3_di_p2c)
+ );
+
+endmodule
 ```
 
+Los pines de I/O poseen un modelo en Verilog que permite su simulación, con lo que es posibel hacer una simulación completa del diseño con los PADs conectados.
 
-## Configuración de la síntesis
+## Creación del fichero de constraints
+Dentro de la carpeta del proyecto editamos el fichero `constraint.sdc`. En este fichero se incluyen configuraciones de los relojes y se añaden los retardos estimados de los PADs de I/O. Estos retardos se pueden estimar de la respuesta eléctrica del sistema. Además sirven como estimador del límite de frecuencia de trabajo de las señales del I/O.
+
+Las señales conectadas a los PADs de salida en las macros (y en el top del verilog) serán las usadas.
+
+El contenido del archivo es el siguiente:
+
+```
+current_design SG13G2Top
+set_units -time ns -resistance kOhm -capacitance pF -voltage V -current uA
+set_max_fanout 8 [current_design]
+set_max_capacitance 0.5 [current_design]
+set_max_transition 3 [current_design]
+set_max_area 0
+
+set_ideal_network [get_pins sg13g2_IOPad_io_clock/p2c]
+create_clock [get_pins sg13g2_IOPad_io_clock/p2c] -name clk_core -period 50.0 -waveform {0 25.0}
+set_clock_uncertainty 0.15 [get_clocks clk_core]
+set_clock_transition 0.25 [get_clocks clk_core]
+
+set clock_ports [get_ports { 
+	io_clk_PAD 
+}]
+set_driving_cell -lib_cell sg13g2_IOPadIn -pin pad $clock_ports
+
+set clk_core_input_ports [get_ports { 
+	io_resetn_PAD 
+	io_irq_5_PAD 
+	io_irq_6_PAD
+	io_irq_7_PAD
+	io_irq_8_PAD
+	io_irq_9_PAD
+	io_irq_10_PAD
+	io_irq_11_PAD	 
+	io_ser_rx_PAD
+	io_flash_io0_di_PAD
+	io_flash_io1_di_PAD
+	io_flash_io2_di_PAD
+	io_flash_io3_di_PAD
+}] 
+set_driving_cell -lib_cell sg13g2_IOPadIn -pin pad $clk_core_input_ports
+set_input_delay 8 -clock clk_core $clk_core_input_ports
+
+set clk_core_output_4mA_ports [get_ports { 
+	io_ser_tx_PAD
+	io_flash_csb_PAD
+	io_flash_clk_PAD
+	io_flash_io0_oe_PAD
+	io_flash_io1_oe_PAD
+	io_flash_io2_oe_PAD
+	io_flash_io3_oe_PAD
+	io_flash_io0_do_PAD
+	io_flash_io1_do_PAD
+	io_flash_io2_do_PAD
+	io_flash_io3_do_PAD
+}] 
+set_driving_cell -lib_cell sg13g2_IOPadOut4mA -pin pad $clk_core_output_4mA_ports
+set_output_delay 8 -clock clk_core $clk_core_output_4mA_ports
+
+set_load -pin_load 5 [all_inputs]
+set_load -pin_load 5 [all_outputs]
+```
+
+## Creación del fichero de configuración de alimentaciones
+Dentro de la carpeta del proyecto editaremos el fichero `pdn.tcl`. Este fichero tiene como punto de partida el genérico dentro de la carpeta del PDK y se han modificado para tener líneas de alimentación en las capas superiores (Topmetal2) y para generar unos anillos y líneas más gruesos, garantizando una baja caída de tensión.
+
+El contenido del archivo es:
+
+```
+# stdcell power pins
+add_global_connection -net {VDD} -pin_pattern {^VDD$} -power
+add_global_connection -net {VDD} -pin_pattern {^VDDPE$}
+add_global_connection -net {VDD} -pin_pattern {^VDDCE$}
+
+add_global_connection -net {VSS} -pin_pattern {^VSS$} -ground
+add_global_connection -net {VSS} -pin_pattern {^VSSE$}
+
+# padframe core power pins
+add_global_connection -net {VDD} -pin_pattern {^vdd$} -power
+add_global_connection -net {VSS} -pin_pattern {^vss$} -ground
+
+# padframe io power pins
+add_global_connection -net {IOVDD} -pin_pattern {^iovdd$} -power
+add_global_connection -net {IOVSS} -pin_pattern {^iovss$} -ground
+
+global_connect
+
+# core voltage domain
+set_voltage_domain -name {CORE} -power {VDD} -ground {VSS}
+
+# stdcell grid
+define_pdn_grid -name {grid} -voltage_domains {CORE}
+
+add_pdn_ring 	-grid {grid} -layers {Metal5 TopMetal1} -widths {30.0} -spacings {5.0} -core_offsets {4.5} -connect_to_pads
+
+add_pdn_stripe 	-grid {grid} -layer {Metal1}    -width {0.44}  -pitch {7.56} -offset {0}      -followpins -extend_to_core_ring
+add_pdn_stripe 	-grid {grid} -layer {Metal5}    -width {6.200} -pitch {100} -offset {13.600} -extend_to_core_ring
+add_pdn_stripe 	-grid {grid} -layer {TopMetal1} -width {6.200} -pitch {100} -offset {13.600} -extend_to_core_ring
+add_pdn_stripe 	-grid {grid} -layer {TopMetal2} -width {6.200} -pitch {100} -offset {13.600} -extend_to_core_ring
 
 
-## Configuración del floorplan
+add_pdn_connect -grid {grid} -layers {Metal1 Metal5}
+add_pdn_connect -grid {grid} -layers {Metal5 TopMetal1}
+add_pdn_connect -grid {grid} -layers {Metal5 TopMetal2}
+add_pdn_connect -grid {grid} -layers {TopMetal1 TopMetal2}
+```
 
+## Creación del fichero de PADs
+Finalmente editaremos el fichero `pads.tcl`. Este fichero contiene la geometría y localización de los PADs en el componente.
 
-## Configuración del place
+En esta colocación se deberá tener en cuenta que el nombre y tipo de los PADs debe coincidir con lo configurado en las macros del Wrapper.
 
+El contenido del fichero es el siguiente:
 
-## Configuración del PDN
+```
+set IO_LENGTH 180
+set IO_WIDTH 80
+set BONDPAD_SIZE 70
+set SEALRING_OFFSET 70
 
+proc calc_horizontal_pad_location {index total} {
+    global IO_LENGTH
+    global IO_WIDTH
+    global BONDPAD_SIZE
+    global SEALRING_OFFSET
 
-## Configuración del CTS
+    set DIE_WIDTH [expr {[lindex $::env(DIE_AREA) 2] - [lindex $::env(DIE_AREA) 0]}]
+    set PAD_OFFSET [expr {$IO_LENGTH + $BONDPAD_SIZE + $SEALRING_OFFSET}]
+    set PAD_AREA_WIDTH [expr {$DIE_WIDTH - ($PAD_OFFSET * 2)}]
+    set HORIZONTAL_PAD_DISTANCE [expr {($PAD_AREA_WIDTH / $total) - $IO_WIDTH}]
 
+    return [expr {$PAD_OFFSET + (($IO_WIDTH + $HORIZONTAL_PAD_DISTANCE) * $index) + ($HORIZONTAL_PAD_DISTANCE / 2)}]
+}
 
-## Configuración del route
+proc calc_vertical_pad_location {index total} {
+    global IO_LENGTH
+    global IO_WIDTH
+    global BONDPAD_SIZE
+    global SEALRING_OFFSET
 
+    set DIE_HEIGHT [expr {[lindex $::env(DIE_AREA) 3] - [lindex $::env(DIE_AREA) 1]}]
+    set PAD_OFFSET [expr {$IO_LENGTH + $BONDPAD_SIZE + $SEALRING_OFFSET}]
+    set PAD_AREA_HEIGHT [expr {$DIE_HEIGHT - ($PAD_OFFSET * 2)}]
+    set VERTICAL_PAD_DISTANCE [expr {($PAD_AREA_HEIGHT / $total) - $IO_WIDTH}]
 
-## Finalización
+    return [expr {$PAD_OFFSET + (($IO_WIDTH + $VERTICAL_PAD_DISTANCE) * $index) + ($VERTICAL_PAD_DISTANCE / 2)}]
+}
+
+make_fake_io_site -name IOLibSite -width 1 -height $IO_LENGTH
+make_fake_io_site -name IOLibCSite -width $IO_LENGTH -height $IO_LENGTH
+
+set IO_OFFSET [expr {$BONDPAD_SIZE + $SEALRING_OFFSET}]
+# Create IO Rows
+make_io_sites \
+    -horizontal_site IOLibSite \
+    -vertical_site IOLibSite \
+    -corner_site IOLibCSite \
+    -offset $IO_OFFSET
+
+# WEST
+place_pad -row IO_WEST -location [calc_vertical_pad_location 7 8] {sg13g2_IOPadVdd_west_0}   -master sg13g2_IOPadVdd
+place_pad -row IO_WEST -location [calc_vertical_pad_location 6 8] {sg13g2_IOPadIOVdd_west_1} -master sg13g2_IOPadIOVdd
+place_pad -row IO_WEST -location [calc_vertical_pad_location 5 8] {sg13g2_IOPad_io_reset}    -master sg13g2_IOPadIn
+place_pad -row IO_WEST -location [calc_vertical_pad_location 4 8] {sg13g2_IOPad_io_clock}    -master sg13g2_IOPadIn
+place_pad -row IO_WEST -location [calc_vertical_pad_location 3 8] {sg13g2_IOPad_io_ser_tx}   -master sg13g2_IOPadOut4mA
+place_pad -row IO_WEST -location [calc_vertical_pad_location 2 8] {sg13g2_IOPad_io_ser_rx}   -master sg13g2_IOPadIn
+place_pad -row IO_WEST -location [calc_vertical_pad_location 1 8] {sg13g2_IOPadVss_west_6}   -master sg13g2_IOPadVss
+place_pad -row IO_WEST -location [calc_vertical_pad_location 0 8] {sg13g2_IOPadIOVss_west_7} -master sg13g2_IOPadIOVss
+
+# NORTH
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 0 8] {sg13g2_IOPadVss_north_0} -master sg13g2_IOPadVss
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 1 8] {sg13g2_IOPad_io_irq_5}   -master sg13g2_IOPadIn
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 2 8] {sg13g2_IOPad_io_irq_6}   -master sg13g2_IOPadIn
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 3 8] {sg13g2_IOPad_io_irq_7}   -master sg13g2_IOPadIn
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 4 8] {sg13g2_IOPad_io_irq_8}   -master sg13g2_IOPadIn
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 5 8] {sg13g2_IOPad_io_irq_9}   -master sg13g2_IOPadIn
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 6 8] {sg13g2_IOPad_io_irq_10}  -master sg13g2_IOPadIn
+place_pad -row IO_NORTH -location [calc_horizontal_pad_location 7 8] {sg13g2_IOPad_io_irq_11}  -master sg13g2_IOPadIn
+
+# EAST
+place_pad -row IO_EAST -location [calc_vertical_pad_location 7 8] {sg13g2_IOPadVdd_east_0}       -master sg13g2_IOPadVdd
+place_pad -row IO_EAST -location [calc_vertical_pad_location 6 8] {sg13g2_IOPad_io_flash_csb}    -master sg13g2_IOPadOut4mA
+place_pad -row IO_EAST -location [calc_vertical_pad_location 5 8] {sg13g2_IOPad_io_flash_clk}    -master sg13g2_IOPadOut4mA
+place_pad -row IO_EAST -location [calc_vertical_pad_location 4 8] {sg13g2_IOPad_io_flash_io0_di} -master sg13g2_IOPadIn
+place_pad -row IO_EAST -location [calc_vertical_pad_location 3 8] {sg13g2_IOPad_io_flash_io1_di} -master sg13g2_IOPadIn
+place_pad -row IO_EAST -location [calc_vertical_pad_location 2 8] {sg13g2_IOPad_io_flash_io2_di} -master sg13g2_IOPadIn
+place_pad -row IO_EAST -location [calc_vertical_pad_location 1 8] {sg13g2_IOPad_io_flash_io3_di} -master sg13g2_IOPadIn
+place_pad -row IO_EAST -location [calc_vertical_pad_location 0 8] {sg13g2_IOPadVss_east_7}       -master sg13g2_IOPadVss
+
+# SOUTH
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 0 8] {sg13g2_IOPad_io_flash_io0_oe} -master sg13g2_IOPadOut4mA
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 2 8] {sg13g2_IOPad_io_flash_io1_oe} -master sg13g2_IOPadOut4mA
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 4 8] {sg13g2_IOPad_io_flash_io2_oe} -master sg13g2_IOPadOut4mA
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 6 8] {sg13g2_IOPad_io_flash_io3_oe} -master sg13g2_IOPadOut4mA
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 1 8] {sg13g2_IOPad_io_flash_io0_do} -master sg13g2_IOPadOut4mA
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 3 8] {sg13g2_IOPad_io_flash_io1_do} -master sg13g2_IOPadOut4mA
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 5 8] {sg13g2_IOPad_io_flash_io2_do} -master sg13g2_IOPadOut4mA
+place_pad -row IO_SOUTH -location [calc_horizontal_pad_location 7 8] {sg13g2_IOPad_io_flash_io3_do} -master sg13g2_IOPadOut4mA
+
+# Place Corner Cells and Filler
+place_corners sg13g2_Corner
+
+set iofill {
+    sg13g2_Filler10000
+    sg13g2_Filler4000
+    sg13g2_Filler2000
+    sg13g2_Filler1000
+    sg13g2_Filler400
+    sg13g2_Filler200
+}
+
+place_io_fill -row IO_NORTH {*}$iofill
+place_io_fill -row IO_SOUTH {*}$iofill
+place_io_fill -row IO_WEST {*}$iofill
+place_io_fill -row IO_EAST {*}$iofill
+
+connect_by_abutment
+
+place_bondpad -bond bondpad_70x70 sg13g2_IOPad* -offset {5.0 -70.0}
+
+remove_io_rows
+```
+
+el fichero tiene al principio unas funciones auxiliares que permiten calculas las coordenadas de un PAD usando el tamaño del componente, el número de pads por lado y su posición.
+
+## Creación del fichero de configuración
+Finalmente editamos el fichero `config.mk` para incluir todos los cambios necesarios para generar el GDSII:
+
+```
+export DESIGN_NAME = picosoc_ihp
+
+export PLATFORM = ihp-sg13g2
+
+# synth
+export SYNTH_MEMORY_MAX_BITS  = 128000
+
+export VERILOG_FILES          = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NAME)/$(DESIGN_NAME).v \
+				$(DESIGN_HOME)/src/picorv32/picosoc/picosoc.v \
+                                $(DESIGN_HOME)/src/picorv32/picosoc/simpleuart.v \
+                                $(DESIGN_HOME)/src/picorv32/picosoc/spimemio.v \
+                                $(DESIGN_HOME)/src/picorv32/picorv32.v
+export SDC_FILE               = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NAME)/constraint.sdc
+
+export FOOTPRINT_TCL = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NAME)/pad.tcl
+
+export PDN_TCL = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NAME)/pdn.tcl
+
+export DIE_AREA = 0.0 0.0 2800.0 2800.0
+export CORE_AREA = 400 400 2400 2400
+
+export PLACE_DENSITY = 0.4
+```
+
+Las diferencias respecto al diseño original son:
+- Ahora definimos el tamaño final del componente en vez de que sea un valor autocalculado
+- Indicamos que use unos ficheros personalizados para los PADs y la red de alimentación
+
+## Síntesis RTL-GDSII del componentes
+En la consola de docker escogemos el proyecto y lo generamos hasta el floorplan:
+
+```
+export DESIGN_CONFIG=./designs/ihp-sg13g2/picosoc_ihp/config.mk
+make synth
+make floorplan
+make gui_floorplan
+```
+
+![Picosoc_ihp final](images/picosoc_ihp_1.png)
+
+Pasada esta inspección lo ejecutamos de manera completa hasta el final:
+
+```
+make
+```
+
+Una vez se complete tendremos el resumen:
+
+```
+Elapsed time: 0:05.06[h:]min:sec. CPU time: user 4.75 sys 0.31 (99%). Peak memory: 1295260KB.
+cp results/ihp-sg13g2/picosoc_ihp/base/6_1_merged.gds results/ihp-sg13g2/picosoc_ihp/base/6_final.gds
+./logs/ihp-sg13g2/picosoc_ihp/base
+Log                            Elapsed seconds Peak Memory/MB
+1_1_yosys                                   42            230
+1_1_yosys_canonicalize                       0             37
+2_1_floorplan                               14            372
+2_2_floorplan_macro                          0            191
+2_3_floorplan_tapcell                        0            148
+2_4_floorplan_pdn                            0            204
+3_1_place_gp_skip_io                        17            309
+3_2_place_iop                                0             72
+3_3_place_gp                                74           1036
+3_4_place_resized                           20            654
+3_5_place_dp                                28            785
+4_1_cts                                     26           1181
+5_1_grt                                     52           2064
+5_2_route                                  293           7325
+5_3_fillcell                                 1            796
+6_1_fill                                     0            361
+6_1_merge                                    5           1264
+6_report                                   179           3624
+Total                                      751           7325
+```
+
+![Picosoc_ihp final](images/picosoc_ihp_2.png)
+
+# Ejercicio final
+
+En el módulo Picosoc hay un periférico que controla una memoria flash externa. En la interfaz definida hay varias señales que se han conectado a PADs de entrada o salida en el exterior:
+
+```
+	.flash_io0_oe(sg13g2_IOPad_io_flash_io0_oe_c2p),
+	.flash_io1_oe(sg13g2_IOPad_io_flash_io1_oe_c2p),
+	.flash_io2_oe(sg13g2_IOPad_io_flash_io2_oe_c2p),
+	.flash_io3_oe(sg13g2_IOPad_io_flash_io3_oe_c2p),
+	.flash_io0_do(sg13g2_IOPad_io_flash_io0_do_c2p),
+	.flash_io1_do(sg13g2_IOPad_io_flash_io1_do_c2p),
+	.flash_io2_do(sg13g2_IOPad_io_flash_io2_do_c2p),
+	.flash_io3_do(sg13g2_IOPad_io_flash_io3_do_c2p),
+	.flash_io0_di(sg13g2_IOPad_io_flash_io0_di_p2c),
+	.flash_io1_di(sg13g2_IOPad_io_flash_io1_di_p2c),
+	.flash_io2_di(sg13g2_IOPad_io_flash_io2_di_p2c),
+	.flash_io3_di(sg13g2_IOPad_io_flash_io3_di_p2c)
+```
+
+Estas señales realmente no están pensadas para salir al exterior sino que deben usarse con un PAD de I/O que permita multiplexar señales de entrada o de salida. Para ello se debe hacer uso de la macro de I/O sg13g2_IOPadInOut4mA.
+
+```
+// type: InputOutput4mA
+`timescale 1ns/10ps
+`celldefine
+module sg13g2_IOPadInOut4mA (pad, c2p, c2p_en, p2c);
+        inout pad;
+        input c2p;
+        input c2p_en;
+        output p2c;
+
+        // Function
+        assign pad = (c2p_en) ? c2p : 1'bz;
+        assign p2c = pad;
+
+        // Timing
+        specify
+                if (c2p_en == 1'b1)
+                        (c2p => pad) = 0;
+                (pad => p2c) = 0;
+        endspecify
+endmodule
+`endcelldefine
+```
+
+En la nomenclatura p2c significa de PAD a core y c2p de core a PAD.
+
+Cada conjunto de tres señales (oe, di, do) debe asociarse a una madro y se debe generar un único PAD de salida.
+
+Debe modificarse:
+- El wrapper de verilog
+- El fichero de constraints
+- El fichero de pads (no es necesario que todos los lados tengan el mismo número de PADs, es opcional)
