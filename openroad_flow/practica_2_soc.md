@@ -986,7 +986,7 @@ add_pdn_connect -grid {grid} -layers {TopMetal1 TopMetal2}
 ```
 
 ## Creación del fichero de PADs
-Finalmente editaremos el fichero `pads.tcl`. Este fichero contiene la geometría y localización de los PADs en el componente.
+Finalmente editaremos el fichero `pad.tcl`. Este fichero contiene la geometría y localización de los PADs en el componente.
 
 En esta colocación se deberá tener en cuenta que el nombre y tipo de los PADs debe coincidir con lo configurado en las macros del Wrapper.
 
