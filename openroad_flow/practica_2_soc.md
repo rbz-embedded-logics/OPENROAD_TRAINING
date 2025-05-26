@@ -166,7 +166,7 @@ El objetivo es realizar una primera síntesis completa de RTL a GDSII del diseñ
 Seguimos trabajando en la máquina host. Volvemos al directorio de partida y entramos dentro del directorio en donde se alojan los proyectos basados en el proceso ihp-sg13g2.
 
 ```
-cd ~/Proyectos/demo_openroad/flow/
+cd ~/Proyectos/demo_openroad/OpenROAD-flow-scripts/flow/
 cd designs
 cd ihp-sg13g2
 ```
