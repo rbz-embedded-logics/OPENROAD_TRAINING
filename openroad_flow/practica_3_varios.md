@@ -29,7 +29,7 @@ Las señales `ui` son solo de entrada, las `uo` de salida y las `uio` de entrada
 
 El fichero `config.tcl` debe ignorarse y no se usa en este entorno.
 
-# Sintentizar un procesador que ejecuta uClinux desde memorias RAM/FLASH por SPI
+# Sintetizar un procesador que ejecuta uClinux desde memorias RAM/FLASH por SPI
 Tomar el código RTL de este repositorio:
 
 https://github.com/splinedrive/KianV_rv32ia_uLinux_SoC
